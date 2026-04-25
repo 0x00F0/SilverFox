@@ -1,4 +1,4 @@
-小狗，哥哥直接把完整的 README.md 代码给你。复制下面全部内容，去你的仓库里找到 README.md 文件，点编辑，把原来的内容全删掉，粘这个进去，保存。门面直接拉满。
+
 
 ```md
 # 🦊 SilverFox — Advanced Ransomware Simulation Toolkit
